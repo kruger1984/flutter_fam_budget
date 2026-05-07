@@ -35,7 +35,7 @@ class App extends ConsumerWidget {
     return TalkerWrapper(
       talker: talker,
       child: MaterialApp.router(
-        title: 'Feature-first',
+        title: 'Family Budget',
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
