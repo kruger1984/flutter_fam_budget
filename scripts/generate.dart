@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+const String stubsPath = 'scripts/stubs';
+
 void main(List<String> args) {
   if (args.isEmpty) {
     _printUsage();
@@ -15,294 +17,104 @@ void main(List<String> args) {
         _printUsage();
         return;
       }
-      final featureName = args[1];
-      // Проверяем наличие флага для отключения freezed
       final isPlain = args.contains('--plain');
-      generateFeature(featureName, useFreezed: !isPlain);
-      return;
+      generateFeature(args[1], useFreezed: !isPlain);
+      break;
     case 'service':
-      if (args.length != 2) {
+      if (args.length < 2) {
         _printUsage();
         return;
       }
       generateService(args[1]);
-      return;
-    case 'help':
-    case '--help':
-    case '-h':
-      _printUsage();
-      return;
+      break;
     default:
       print('❌ Unknown command: "$command"');
       _printUsage();
-      return;
   }
 }
-
-String _getProjectName() {
-  final pubspec = File('pubspec.yaml');
-
-  if (!pubspec.existsSync()) {
-    throw Exception('pubspec.yaml not found');
-  }
-
-  final content = pubspec.readAsStringSync();
-  final yamlMap = loadYaml(content);
-
-  final name = yamlMap['name'];
-
-  if (name == null || name.toString().trim().isEmpty) {
-    throw Exception('Project name not found in pubspec.yaml');
-  }
-
-  return name.toString();
-}
-
-void _printUsage() {
-  print('Usage:');
-  print('  dart run scripts/generate.dart feature <feature_name> [--plain]');
-  print('  dart run scripts/generate.dart service <service_name>');
-  print('');
-  print('Examples:');
-  print('  dart run scripts/generate.dart feature habits          # Generate feature with Freezed model');
-  print('  dart run scripts/generate.dart feature habits --plain  # Generate feature with Plain model');
-  print('  dart run scripts/generate.dart service auth');
-}
-
-String _normalizeName(String input) => input.trim().toLowerCase();
 
 void generateFeature(String featureName, {bool useFreezed = true}) {
-  final name = _normalizeName(featureName);
-  if (name.isEmpty) {
-    _printUsage();
-    return;
-  }
-
+  final name = featureName.trim().toLowerCase();
+  final pascal = _toPascalCase(name);
+  final package = _getProjectName();
   final basePath = p.join('lib', 'features', name);
 
-  // 1. Create directories
-  Directory(p.join(basePath, 'providers')).createSync(recursive: true);
-  Directory(p.join(basePath, 'repository')).createSync(recursive: true);
-  Directory(p.join(basePath, 'models')).createSync(recursive: true);
-  Directory(p.join(basePath, 'widgets')).createSync(recursive: true);
+  final replacements = {
+    'name': name,
+    'pascalCase': pascal,
+    'package': package,
+  };
 
-  // 2. Create files
-  createFile(p.join(basePath, '${name}_screen.dart'), screenTemplate(name));
-  createFile(p.join(basePath, 'providers', '${name}_pod.dart'), providerTemplate(name));
-  createFile(
-    p.join(basePath, 'repository', '${name}_repository.dart'),
-    repositoryTemplate(name),
-  );
-  createFile(p.join(basePath, 'models', '${name}_model.dart'), modelTemplate(name, useFreezed: useFreezed));
+  // 1. Создаем папки
+  for (var dir in ['providers', 'repository', 'models', 'widgets']) {
+    Directory(p.join(basePath, dir)).createSync(recursive: true);
+  }
 
-  print('✅ Feature "$name" successfully generated at $basePath!');
-  print('🚀 Don\'t forget to run build_runner: dart run build_runner build -d');
+  // 2. Генерируем файлы
+  _createFile(p.join(basePath, '${name}_screen.dart'), _loadStub('screen.stub', replacements));
+  _createFile(p.join(basePath, 'providers', '${name}_pod.dart'), _loadStub('pod.stub', replacements));
+  _createFile(p.join(basePath, 'repository', '${name}_repository.dart'), _loadStub('repository.stub', replacements));
+
+  final modelStub = useFreezed ? 'model_freezed.stub' : 'model_plain.stub';
+  _createFile(p.join(basePath, 'models', '${name}_model.dart'), _loadStub(modelStub, replacements));
+
+  print('✅ Feature "$name" generated at $basePath');
+  if (useFreezed) print('📦 Using Freezed model');
 }
 
-void createFile(String path, String content) {
+void generateService(String serviceName) {
+  final name = serviceName.trim().toLowerCase();
+  final replacements = {
+    'name': name,
+    'pascalCase': _toPascalCase(name),
+  };
+
+  final dir = p.join('lib', 'core', 'services');
+  Directory(dir).createSync(recursive: true);
+
+  _createFile(p.join(dir, '${name}_service.dart'), _loadStub('service.stub', replacements));
+  print('✅ Service "${_toPascalCase(name)}Service" generated!');
+}
+
+// --- Helpers ---
+
+String _loadStub(String fileName, Map<String, String> replacements) {
+  final file = File(p.join(stubsPath, fileName));
+  if (!file.existsSync()) {
+    print('❌ Error: Stub file missing at ${file.path}');
+    exit(1);
+  }
+
+  String content = file.readAsStringSync();
+  replacements.forEach((key, value) {
+    content = content.replaceAll('{{$key}}', value);
+  });
+  return content;
+}
+
+void _createFile(String path, String content) {
   final file = File(path);
   if (file.existsSync()) {
-    print('⚠️ Skipped (already exists): $path');
+    print('⚠️ Skipped: $path (exists)');
     return;
   }
   file.writeAsStringSync(content);
 }
 
-void generateService(String serviceName) {
-  final name = _normalizeName(serviceName);
-  if (name.isEmpty) {
-    _printUsage();
-    return;
-  }
+String _toPascalCase(String text) => text.split('_').map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : '').join('');
 
-  final directoryPath = p.join('lib', 'core', 'services');
-  final filePath = p.join(directoryPath, '${name}_service.dart');
-
-  Directory(directoryPath).createSync(recursive: true);
-  createFile(filePath, serviceTemplate(name));
-
-  print('✅ Service "${_toPascalCase(name)}Service" generated at $filePath');
-  print('🚀 Don\'t forget to run build_runner: dart run build_runner build -d');
-}
-
-// ==========================================
-// TEMPLATES
-// ==========================================
-
-String screenTemplate(String name) {
-  final pascalCase = _toPascalCase(name);
-  return '''
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/${name}_pod.dart';
-
-class ${pascalCase}Screen extends ConsumerWidget {
-  const ${pascalCase}Screen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the state from the provider
-    final state = ref.watch(${name}Provider);
-
-    return SafeArea(
-      child: state.when(
-        data: (data) => _buildContent(context, ref, data),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: \$error')),
-      ),
-    );
-  }
-
-  Widget _buildContent(BuildContext context, WidgetRef ref, dynamic data) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text('$pascalCase Screen', style: Theme.of(context).textTheme.titleLarge),
-        // Add your feature-specific widgets here
-      ],
-    );
-  }
-}
-''';
-}
-
-String providerTemplate(String name) {
-  final pascalCase = _toPascalCase(name);
-  return '''
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../repository/${name}_repository.dart';
-
-part '${name}_pod.g.dart';
-
-@riverpod
-class ${pascalCase}Notifier extends _\$${pascalCase}Notifier {
-  @override
-  FutureOr<dynamic> build() async {
-    // Initial data loading
-    return _fetchData();
-  }
-
-  Future<dynamic> _fetchData() async {
-    final repository = ref.read(${name}RepositoryProvider);
-    // TODO: Implement actual data fetching
-    // return await repository.getData();
-    return null; 
-  }
-
-  // Example of a state mutation method
-  Future<void> performAction() async {
-    state = const AsyncLoading();
-    try {
-      final repository = ref.read(${name}RepositoryProvider);
-      // await repository.doSomething();
-      
-      // Refresh data after action
-      state = AsyncData(await _fetchData());
-    } catch (e, st) {
-      state = AsyncError(e, st);
-    }
-  }
-}
-''';
-}
-
-String repositoryTemplate(String name) {
-  final pascalCase = _toPascalCase(name);
-  final package = _getProjectName();
-
-  return '''
-import 'package:$package/core/api/api_client.dart';
-import 'package:$package/core/api/http_pod.dart';
-import 'package:$package/core/utils/talker_pod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:talker/talker.dart';
-
-part '${name}_repository.g.dart';
-
-class ${pascalCase}Repository {
-  ${pascalCase}Repository(this._api, this._talker);
-
-  final ApiClient _api;
-  final Talker _talker;
-
-  // TODO: add methods using _api; on failure log with _talker and rethrow / map errors
-}
-
-@Riverpod(keepAlive: true)
-${pascalCase}Repository ${name}Repository(Ref ref) {
-  return ${pascalCase}Repository(
-    ref.watch(apiClientProvider),
-    ref.watch(talkerProvider),
-  );
-}
-''';
-}
-
-String modelTemplate(String name, {required bool useFreezed}) {
-  final pascalCase = _toPascalCase(name);
-
-  if (useFreezed) {
-    return '''
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part '${name}_model.freezed.dart';
-part '${name}_model.g.dart';
-
-@freezed
-class ${pascalCase}Model with _\$${pascalCase}Model {
-  const factory ${pascalCase}Model({
-    required String id,
-  }) = _${pascalCase}Model;
-
-  factory ${pascalCase}Model.fromJson(Map<String, dynamic> json) =>
-      _\$${pascalCase}ModelFromJson(json);
-}
-''';
-  }
-
-  return '''
-/// Data model for [$name].
-class ${pascalCase}Model {
-  const ${pascalCase}Model({required this.id});
-
-  final String id;
-}
-''';
-}
-
-String serviceTemplate(String name) {
-  final className = _toPascalCase(name);
-  return '''
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:talker/talker.dart';
-import '../utils/talker_pod.dart';
-
-part '${name}_service.g.dart';
-
-class ${className}Service {
-  ${className}Service(this._talker);
-
-  final Talker _talker;
-
-  void init() {
-    _talker.info('${className}Service initialized');
+String _getProjectName() {
+  try {
+    final doc = loadYaml(File('pubspec.yaml').readAsStringSync());
+    return doc['name'];
+  } catch (_) {
+    return 'my_project';
   }
 }
 
-@Riverpod(keepAlive: true)
-${className}Service ${name}Service(Ref ref) {
-  return ${className}Service(
-    ref.watch(talkerProvider),
-  );
-}
-''';
-}
-
-// Helper function to convert snake_case to PascalCase
-String _toPascalCase(String text) {
-  if (text.isEmpty) return text;
-  return text.split('_').map((word) {
-    if (word.isEmpty) return word;
-    return word[0].toUpperCase() + word.substring(1).toLowerCase();
-  }).join('');
+void _printUsage() {
+  print('\n🚀 Flutter Code Generator');
+  print('Usage:');
+  print('  dart run scripts/generate.dart feature <name> [--plain]');
+  print('  dart run scripts/generate.dart service <name>');
 }

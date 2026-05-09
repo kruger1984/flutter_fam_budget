@@ -1,0 +1,14 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part '{{name}}_model.freezed.dart';
+part '{{name}}_model.g.dart';
+
+@freezed
+abstract class {{pascalCase}}Model with _${{pascalCase}}Model {
+  const factory {{pascalCase}}Model({
+    required String id,
+  }) = _{{pascalCase}}Model;
+
+  factory {{pascalCase}}Model.fromJson(Map<String, dynamic> json) =>
+      _${{pascalCase}}ModelFromJson(json);
+}

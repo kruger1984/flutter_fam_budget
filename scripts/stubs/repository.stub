@@ -1,0 +1,24 @@
+import 'package:{{package}}/core/api/api_client.dart';
+import 'package:{{package}}/core/api/http_pod.dart';
+import 'package:{{package}}/core/utils/talker_pod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:talker/talker.dart';
+
+part '{{name}}_repository.g.dart';
+
+class {{pascalCase}}Repository {
+  {{pascalCase}}Repository(this._api, this._talker);
+
+  final ApiClient _api;
+  final Talker _talker;
+
+  // TODO: add methods
+}
+
+@Riverpod(keepAlive: true)
+{{pascalCase}}Repository {{name}}Repository(Ref ref) {
+  return {{pascalCase}}Repository(
+    ref.watch(apiClientProvider),
+    ref.watch(talkerProvider),
+  );
+}

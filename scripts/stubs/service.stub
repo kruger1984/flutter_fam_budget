@@ -1,0 +1,22 @@
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:talker/talker.dart';
+import '../utils/talker_pod.dart';
+
+part '{{name}}_service.g.dart';
+
+class {{pascalCase}}Service {
+  {{pascalCase}}Service(this._talker);
+
+  final Talker _talker;
+
+  void init() {
+    _talker.info('{{pascalCase}}Service initialized');
+  }
+}
+
+@Riverpod(keepAlive: true)
+{{pascalCase}}Service {{name}}Service(Ref ref) {
+  return {{pascalCase}}Service(
+    ref.watch(talkerProvider),
+  );
+}
