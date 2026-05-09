@@ -1,16 +1,18 @@
 import 'package:{{package}}/core/api/api_client.dart';
 import 'package:{{package}}/core/api/http_pod.dart';
 import 'package:{{package}}/core/utils/talker_pod.dart';
+import 'package:{{package}}/core/cache/app_cache.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:talker/talker.dart';
 
 part '{{name}}_repository.g.dart';
 
 class {{pascalCase}}Repository {
-  {{pascalCase}}Repository(this._api, this._talker);
+  {{pascalCase}}Repository(this._api, this._talker, this._cache);
 
   final ApiClient _api;
   final Talker _talker;
+  final Cache _cache;
 
   // TODO: add methods
 }

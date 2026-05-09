@@ -7,6 +7,8 @@ import 'package:family_budget/core/utils/talker_pod.dart';
 import 'package:family_budget/features/auth/providers/auth_session_revision_pod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../cache/cache_pods.dart';
+
 part 'http_pod.g.dart';
 
 @Riverpod(keepAlive: true)
@@ -23,9 +25,18 @@ Dio dio(Ref ref) {
       final t = await ref.read(authTokenStoreProvider).readToken();
       return t ?? '';
     },
+    getFamilyId: () async {
+      final cache = ref.read(appCacheProvider);
+      final id = await cache.getRaw(
+        namespace: 'auth',
+        key: 'active_family_id',
+      );
+      return id?.toString();
+    },
     onUnauthorized: () {
       Future<void>(() async {
         await ref.read(authTokenStoreProvider).clearToken();
+        await ref.read(appCacheProvider).remove(namespace: 'auth', key: 'active_family_id');
         ref.read(authSessionRevisionProvider.notifier).afterUnauthorized();
       });
     },

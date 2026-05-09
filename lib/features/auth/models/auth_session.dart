@@ -8,7 +8,7 @@ part 'auth_session.g.dart';
 abstract class AuthSession with _$AuthSession {
   const factory AuthSession({
     required String token,
-    AppUser? user,
+    User? user,
   }) = _AuthSession;
 
   factory AuthSession.fromJson(Map<String, dynamic> json) =>

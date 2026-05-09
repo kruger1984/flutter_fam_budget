@@ -44,7 +44,7 @@ class AuthRepository {
       final item = map['item'];
       if (userJson == null && item is Map<String, dynamic>) userJson = item;
 
-      final appUser = userJson != null ? AppUser.fromJson(userJson) : null;
+      final appUser = userJson != null ? User.fromJson(userJson) : null;
       return AuthSession(token: token, user: appUser);
     } on ApiException catch (e, st) {
       _talker.error('Login failed', e, st);
@@ -132,7 +132,7 @@ class AuthRepository {
         final profileRaw = await _api.get(path: 'auth/me');
         final profileMap = profileRaw as Map<String, dynamic>;
         final item = profileMap['item'] ?? profileMap['user'] ?? profileMap['data'];
-        final user = item is Map<String, dynamic> ? AppUser.fromJson(item) : null;
+        final user = item is Map<String, dynamic> ? User.fromJson(item) : null;
         return AuthSession(token: appToken, user: user);
       } catch (e, st) {
         _talker.warning('Failed to load profile after social login: $e');
@@ -178,7 +178,7 @@ class AuthRepository {
       if (item is! Map<String, dynamic>) {
         return AuthSession(token: token, user: null);
       }
-      return AuthSession(token: token, user: AppUser.fromJson(item));
+      return AuthSession(token: token, user: User.fromJson(item));
     } on ApiException catch (e) {
       if (e.code == 401) {
         await _store.clearToken();
@@ -197,14 +197,14 @@ class AuthRepository {
     await _store.clearToken();
   }
 
-  Future<AppUser> getUser() async {
+  Future<User> getUser() async {
     try {
       final raw = await _api.get(path: 'auth/me');
       final map = raw as Map<String, dynamic>;
       final item = map['item'] ?? map['user'] ?? map['data'];
 
       if (item is Map<String, dynamic>) {
-        return AppUser.fromJson(item);
+        return User.fromJson(item);
       }
       throw ApiException('Неправильний формат даних профілю', 0);
     } catch (e, st) {

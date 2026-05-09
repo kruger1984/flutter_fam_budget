@@ -15,6 +15,7 @@ class DioFactory {
     Future<String> Function()? getToken,
     void Function()? onUnauthorized,
     Talker? talker,
+    Future<String?> Function()? getFamilyId,
   }) {
     final dio = Dio(
       BaseOptions(
@@ -43,6 +44,14 @@ class DioFactory {
               talker?.handle(e, st, 'HTTP client: failed to read auth token');
             }
           }
+
+          if (getFamilyId != null) {
+            final familyId = await getFamilyId();
+            if (familyId != null && familyId.isNotEmpty) {
+              options.headers['X-Family-Id'] = familyId;
+            }
+          }
+
           return handler.next(options);
         },
         onError: (e, handler) {

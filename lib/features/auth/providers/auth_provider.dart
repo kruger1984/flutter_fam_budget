@@ -57,6 +57,6 @@ class Auth extends _$Auth {
 }
 
 @riverpod
-AppUser? currentUser(Ref ref) {
+User? currentUser(Ref ref) {
   return ref.watch(authProvider).value?.user;
 }

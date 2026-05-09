@@ -12,7 +12,7 @@ class AuthHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
-    final label = session?.user?.displayName ?? '🛠 Test';
+    final label = session?.user?.name ?? '🛠 Test';
 
     return Scaffold(
       appBar: AppBar(
