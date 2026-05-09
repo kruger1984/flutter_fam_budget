@@ -25,6 +25,7 @@ class AuthRepository {
   final AuthTokenStore _store;
 
   static const _googleScopes = <String>['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'];
+  static const _devAuthToken = String.fromEnvironment('DEV_AUTH_TOKEN');
 
   /// POST body matches common Laravel/Sanctum-style APIs; adjust path/body per backend.
   Future<AuthSession> login({required String email, required String password}) async {
@@ -128,7 +129,7 @@ class AuthRepository {
 
       // Optionally load user profile so UI gets user immediately.
       try {
-        final profileRaw = await _api.get(path: 'profile');
+        final profileRaw = await _api.get(path: 'auth/me');
         final profileMap = profileRaw as Map<String, dynamic>;
         final item = profileMap['item'] ?? profileMap['user'] ?? profileMap['data'];
         final user = item is Map<String, dynamic> ? AppUser.fromJson(item) : null;
@@ -159,10 +160,19 @@ class AuthRepository {
   }
 
   Future<AuthSession?> restoreSession() async {
+    // Local/dev shortcut: allow injecting a pre-issued backend token at runtime.
+    // Run with: flutter run --dart-define=DEV_AUTH_TOKEN="your_token"
+    if (_devAuthToken.isNotEmpty) {
+      final current = await _store.readToken();
+      if (current != _devAuthToken) {
+        await _store.saveToken(_devAuthToken);
+      }
+    }
+
     final token = await _store.readToken();
     if (token == null || token.isEmpty) return null;
     try {
-      final raw = await _api.get(path: 'profile');
+      final raw = await _api.get(path: 'auth/me');
       final map = raw as Map<String, dynamic>;
       final item = map['item'] ?? map['user'] ?? map['data'];
       if (item is! Map<String, dynamic>) {
@@ -189,7 +199,7 @@ class AuthRepository {
 
   Future<AppUser> getUser() async {
     try {
-      final raw = await _api.get(path: 'profile');
+      final raw = await _api.get(path: 'auth/me');
       final map = raw as Map<String, dynamic>;
       final item = map['item'] ?? map['user'] ?? map['data'];
 

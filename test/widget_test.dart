@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/memory_auth_token_store.dart';
+import 'package:family_budget/i18n/strings.g.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +20,9 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           authTokenStoreProvider.overrideWithValue(MemoryAuthTokenStore()),
         ],
-        child: const App(),
+          child: TranslationProvider(
+            child: const App(),
+          ),
       ),
     );
 

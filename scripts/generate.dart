@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 void main(List<String> args) {
   if (args.isEmpty) {
@@ -10,11 +11,14 @@ void main(List<String> args) {
   final command = args[0].toLowerCase();
   switch (command) {
     case 'feature':
-      if (args.length != 2) {
+      if (args.length < 2) {
         _printUsage();
         return;
       }
-      generateFeature(args[1]);
+      final featureName = args[1];
+      // Проверяем наличие флага для отключения freezed
+      final isPlain = args.contains('--plain');
+      generateFeature(featureName, useFreezed: !isPlain);
       return;
     case 'service':
       if (args.length != 2) {
@@ -35,19 +39,39 @@ void main(List<String> args) {
   }
 }
 
+String _getProjectName() {
+  final pubspec = File('pubspec.yaml');
+
+  if (!pubspec.existsSync()) {
+    throw Exception('pubspec.yaml not found');
+  }
+
+  final content = pubspec.readAsStringSync();
+  final yamlMap = loadYaml(content);
+
+  final name = yamlMap['name'];
+
+  if (name == null || name.toString().trim().isEmpty) {
+    throw Exception('Project name not found in pubspec.yaml');
+  }
+
+  return name.toString();
+}
+
 void _printUsage() {
   print('Usage:');
-  print('  dart run scripts/generate.dart feature <feature_name>');
+  print('  dart run scripts/generate.dart feature <feature_name> [--plain]');
   print('  dart run scripts/generate.dart service <service_name>');
   print('');
   print('Examples:');
-  print('  dart run scripts/generate.dart feature habits');
+  print('  dart run scripts/generate.dart feature habits          # Generate feature with Freezed model');
+  print('  dart run scripts/generate.dart feature habits --plain  # Generate feature with Plain model');
   print('  dart run scripts/generate.dart service auth');
 }
 
 String _normalizeName(String input) => input.trim().toLowerCase();
 
-void generateFeature(String featureName) {
+void generateFeature(String featureName, {bool useFreezed = true}) {
   final name = _normalizeName(featureName);
   if (name.isEmpty) {
     _printUsage();
@@ -64,12 +88,12 @@ void generateFeature(String featureName) {
 
   // 2. Create files
   createFile(p.join(basePath, '${name}_screen.dart'), screenTemplate(name));
-  createFile(p.join(basePath, 'providers', '${name}_provider.dart'), providerTemplate(name));
+  createFile(p.join(basePath, 'providers', '${name}_pod.dart'), providerTemplate(name));
   createFile(
     p.join(basePath, 'repository', '${name}_repository.dart'),
     repositoryTemplate(name),
   );
-  createFile(p.join(basePath, 'models', '${name}_model.dart'), modelTemplate(name));
+  createFile(p.join(basePath, 'models', '${name}_model.dart'), modelTemplate(name, useFreezed: useFreezed));
 
   print('✅ Feature "$name" successfully generated at $basePath!');
   print('🚀 Don\'t forget to run build_runner: dart run build_runner build -d');
@@ -110,7 +134,7 @@ String screenTemplate(String name) {
   return '''
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/${name}_provider.dart';
+import 'providers/${name}_pod.dart';
 
 class ${pascalCase}Screen extends ConsumerWidget {
   const ${pascalCase}Screen({super.key});
@@ -118,7 +142,7 @@ class ${pascalCase}Screen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the state from the provider
-    final state = ref.watch(${name}NotifierProvider);
+    final state = ref.watch(${name}Provider);
 
     return SafeArea(
       child: state.when(
@@ -133,7 +157,7 @@ class ${pascalCase}Screen extends ConsumerWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('${pascalCase} Screen', style: Theme.of(context).textTheme.titleLarge),
+        Text('$pascalCase Screen', style: Theme.of(context).textTheme.titleLarge),
         // Add your feature-specific widgets here
       ],
     );
@@ -148,7 +172,7 @@ String providerTemplate(String name) {
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../repository/${name}_repository.dart';
 
-part '${name}_provider.g.dart';
+part '${name}_pod.g.dart';
 
 @riverpod
 class ${pascalCase}Notifier extends _\$${pascalCase}Notifier {
@@ -184,10 +208,12 @@ class ${pascalCase}Notifier extends _\$${pascalCase}Notifier {
 
 String repositoryTemplate(String name) {
   final pascalCase = _toPascalCase(name);
+  final package = _getProjectName();
+
   return '''
-import 'package:feature_first_example/core/api/api_client.dart';
-import 'package:feature_first_example/core/api/http_pod.dart';
-import 'package:feature_first_example/core/utils/talker_pod.dart';
+import 'package:$package/core/api/api_client.dart';
+import 'package:$package/core/api/http_pod.dart';
+import 'package:$package/core/utils/talker_pod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:talker/talker.dart';
 
@@ -212,11 +238,30 @@ ${pascalCase}Repository ${name}Repository(Ref ref) {
 ''';
 }
 
-String modelTemplate(String name) {
+String modelTemplate(String name, {required bool useFreezed}) {
   final pascalCase = _toPascalCase(name);
+
+  if (useFreezed) {
+    return '''
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part '${name}_model.freezed.dart';
+part '${name}_model.g.dart';
+
+@freezed
+class ${pascalCase}Model with _\$${pascalCase}Model {
+  const factory ${pascalCase}Model({
+    required String id,
+  }) = _${pascalCase}Model;
+
+  factory ${pascalCase}Model.fromJson(Map<String, dynamic> json) =>
+      _\$${pascalCase}ModelFromJson(json);
+}
+''';
+  }
+
   return '''
-/// Data model for [$name]. Add [fromJson] when the API shape is known
-/// (or switch to `freezed` + `json_serializable` if you want codegen).
+/// Data model for [$name].
 class ${pascalCase}Model {
   const ${pascalCase}Model({required this.id});
 

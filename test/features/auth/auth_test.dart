@@ -83,7 +83,7 @@ void main() {
 
     final dio = Dio(BaseOptions(baseUrl: 'http://localhost/'));
     DioAdapter(dio: dio, matcher: const UrlRequestMatcher(matchMethod: true))
-      .onGet('profile', (server) {
+      .onGet('auth/me', (server) {
         return server.reply(200, {
           'item': {'id': '42', 'email': 'restored@example.com'},
         });
