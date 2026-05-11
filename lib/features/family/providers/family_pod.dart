@@ -1,4 +1,6 @@
+import 'package:family_budget/features/family/models/family.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import '../repository/family_repository.dart';
 
 part 'family_pod.g.dart';
@@ -6,22 +8,28 @@ part 'family_pod.g.dart';
 @riverpod
 class FamilyNotifier extends _$FamilyNotifier {
   @override
-  FutureOr<dynamic> build() async {
-    return _fetchData();
-  }
-
-  Future<dynamic> _fetchData() async {
-    final repository = ref.read(familyRepositoryProvider);
+  FutureOr<Family?> build() async {
     return null;
   }
 
-  Future<void> performAction() async {
+  Future<void> createFamily(String name) async {
     state = const AsyncLoading();
-    try {
+
+    state = await AsyncValue.guard(() async {
       final repository = ref.read(familyRepositoryProvider);
-      state = AsyncData(await _fetchData());
-    } catch (e, st) {
-      state = AsyncError(e, st);
-    }
+      final newFamily = await repository.create(name);
+
+      return newFamily;
+    });
+  }
+
+  Future<void> joinFamily(String code) async {
+    state = const AsyncLoading();
+
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(familyRepositoryProvider);
+      final joinedFamily = await repository.join(code);
+      return joinedFamily;
+    });
   }
 }

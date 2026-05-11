@@ -21,7 +21,7 @@ abstract class User with _$User {
     @JsonKey(name: 'updated_at', fromJson: _parseDateLocalNullable) DateTime? updatedAt,
   }) = _AppUser;
 
-  factory User.fromJson(Map<String, dynamic> json) => _$AppUserFromJson(json);
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
   bool hasActiveSubscription() => subscription?.isActive ?? false;
 
