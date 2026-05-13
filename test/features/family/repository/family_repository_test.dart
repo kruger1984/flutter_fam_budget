@@ -190,12 +190,41 @@ void main() {
       ),
     ).thenThrow(dioError);
 
-    // ТУТ ВАЖЛИВО: Перевіряємо наш кастомний ексепшн!
     expect(() => repository.join(inviteCode), throwsA(isA<InvalidInviteCodeException>()));
 
     // Перевіряємо, що логер все одно отримав виклик (необов'язково, але можна)
-    // verifyNever(() => mockTalker.error(any(), any(), any())).called(0);
-    // Оскільки ми кидаємо кастомний ексепшн раніше, ніж логуємо Unknown,
-    // консоль буде абсолютно чистою.
+    verifyNever(() => mockTalker.error(any(), any(), any())).called(0);
+  });
+
+  test('getFamily(id) повинен повернути одну повноцінну модель сім\'ї', () async {
+    // 1. ARRANGE
+    const familyId = 10;
+
+    final mockJsonResponse = {
+      "success": true,
+      "data": {
+        // Тут об'єкт, а не масив
+        "id": familyId,
+        "name": "My Own Family",
+        "role": "owner",
+        "owner": {"id": 1, "name": "Me", "email": "me@test.com"},
+        "users": [
+          {"id": 1, "name": "Me", "email": "me@test.com"},
+          {"id": 2, "name": "Wife", "email": "wife@test.com"},
+        ],
+      },
+    };
+
+    // Мокаємо запит до конкретного ID
+    when(() => mockApi.get(path: 'families/$familyId')).thenAnswer((_) async => mockJsonResponse);
+
+    // 2. ACT
+    final result = await repository.getFamily(familyId);
+
+    // 3. ASSERT
+    expect(result, isA<Family>());
+    expect(result.id, familyId);
+    expect(result.users.length, 2);
+    expect(result.owner.name, 'Me');
   });
 }

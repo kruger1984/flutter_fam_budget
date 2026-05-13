@@ -85,6 +85,21 @@ class FamilyRepository {
       rethrow;
     }
   }
+
+  Future<Family> getFamily(int id) async {
+    try {
+      _talker.debug('🏠 Requesting detailed family data for ID: $id');
+
+      final response = await _api.get(path: 'families/$id');
+      final Map<String, dynamic> data = response['data'];
+
+      return Family.fromJson(data);
+    } catch (e, st) {
+      _talker.error('FamilyRepository: failed to fetch detailed family', e, st);
+      rethrow;
+    }
+  }
+
 }
 
 @Riverpod(keepAlive: true)
