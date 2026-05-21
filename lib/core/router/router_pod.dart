@@ -1,6 +1,8 @@
 import 'package:family_budget/features/family/family_gate_screen.dart';
 import 'package:family_budget/features/family/providers/family_pod.dart';
 import 'package:family_budget/features/home/home_screen.dart';
+import 'package:family_budget/features/home/place_holder_screen.dart';
+import 'package:family_budget/shared/widgets/main_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -29,9 +31,7 @@ GoRouter router(Ref ref) {
 
       final session = authState.asData?.value;
 
-      if (session == null) {
-        return isLoggingIn ? null : '/login';
-      }
+      if (session == null) return isLoggingIn ? null : '/login';
 
       if (isLoggingIn) return '/';
 
@@ -39,24 +39,16 @@ GoRouter router(Ref ref) {
 
       final family = familyState.asData?.value;
 
-      if (family == null) {
-        return (isAtGate || isPayment) ? null : '/gate';
-      }
+      if (family == null) return (isAtGate || isPayment) ? null : '/gate';
 
-      if (isAtGate) {
-        return '/';
-      }
+      if (isAtGate) return '/';
 
       return null;
     },
 
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-
       GoRoute(path: '/gate', builder: (context, state) => const FamilyGateScreen()),
-
-      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
-
       GoRoute(path: '/payment', builder: (context, state) => const PaymentScreen()),
       GoRoute(
         path: '/payment/thanks',
@@ -64,6 +56,25 @@ GoRouter router(Ref ref) {
           final message = state.extra as String? ?? 'Дякуємо за покупку!';
           return ThanksScreen(message: message);
         },
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainScaffold(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/', builder: (context, state) => const HomeScreen())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/budget', builder: (context, state) => const PlaceholderScreen(title: 'Бюджет та Аналітика'))],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/goals', builder: (context, state) => const PlaceholderScreen(title: 'Цілі та Планування'))],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/academy', builder: (context, state) => const PlaceholderScreen(title: 'Академія'))],
+          ),
+        ],
       ),
     ],
 

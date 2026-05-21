@@ -1,3 +1,4 @@
+import 'package:family_budget/shared/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,26 +19,32 @@ class HomeScreen extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(family.name),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
-                tooltip: 'Видалити сім\'ю з кешу (Тест)',
-                onPressed: () {
-                  // Викликаємо наш тестовий метод
-                  ref.read(familyProvider.notifier).clearCacheForTest();
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () {
-                  // Тут будуть налаштування сім'ї
-                },
-              ),
-            ],
+            title: const Text('Сьогодення'),
+            centerTitle: true,
           ),
-          body: Center(
-            child: Text('Тут буде бюджет сім\'ї ${family.name}'),
+
+          drawer: const AppDrawer(),
+
+          body: const SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Мої рахунки',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 16),
+                  // TODO: Тут буде список рахунків з accountNotifierProvider
+                  Expanded(
+                    child: Center(
+                      child: Text('Тут будуть картки рахунків'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },

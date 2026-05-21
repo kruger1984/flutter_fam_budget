@@ -58,7 +58,7 @@ class FamilyNotifier extends _$FamilyNotifier {
     });
   }
 
-  Future<void> clearCacheForTest() async {
+  Future<void> clearActiveFamily() async {
     final cache = ref.read(appCacheProvider);
     await cache.remove(namespace: 'auth', key: 'active_family_id');
     state = const AsyncData(null);

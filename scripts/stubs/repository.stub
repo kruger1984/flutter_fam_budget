@@ -1,6 +1,7 @@
 import 'package:{{package}}/core/api/api_client.dart';
 import 'package:{{package}}/core/api/http_pod.dart';
 import 'package:{{package}}/core/utils/talker_pod.dart';
+import 'package:{{package}}/core/cache/cache_pods.dart';
 import 'package:{{package}}/core/cache/app_cache.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:talker/talker.dart';
@@ -12,7 +13,7 @@ class {{pascalCase}}Repository {
 
   final ApiClient _api;
   final Talker _talker;
-  final Cache _cache;
+  final AppCache _cache;
 
   // TODO: add methods
 }
@@ -22,5 +23,6 @@ class {{pascalCase}}Repository {
   return {{pascalCase}}Repository(
     ref.watch(apiClientProvider),
     ref.watch(talkerProvider),
+    ref.watch(appCacheProvider),
   );
 }

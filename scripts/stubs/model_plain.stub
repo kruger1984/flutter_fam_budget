@@ -1,5 +1,5 @@
-class {{pascalCase}}Model {
-  const {{pascalCase}}Model({required this.id});
+class {{pascalCase}} {
+  const {{pascalCase}}({required this.id});
 
   final String id;
 }

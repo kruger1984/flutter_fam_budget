@@ -89,7 +89,7 @@ void main() {
       when(() => mockCache.remove(namespace: 'auth', key: 'active_family_id')).thenAnswer((_) async {});
 
       // Act
-      await container.read(familyProvider.notifier).clearCacheForTest();
+      await container.read(familyProvider.notifier).clearActiveFamily();
 
       // Assert
       verify(() => mockCache.remove(namespace: 'auth', key: 'active_family_id')).called(1);

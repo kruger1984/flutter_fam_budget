@@ -56,10 +56,11 @@ void generateFeature(String featureName, {bool useFreezed = true}) {
   _createFile(p.join(basePath, 'repository', '${name}_repository.dart'), _loadStub('repository.stub', replacements));
 
   final modelStub = useFreezed ? 'model_freezed.stub' : 'model_plain.stub';
-  _createFile(p.join(basePath, 'models', '${name}_model.dart'), _loadStub(modelStub, replacements));
+  _createFile(p.join(basePath, 'models', '${name}.dart'), _loadStub(modelStub, replacements));
 
   print('✅ Feature "$name" generated at $basePath');
   if (useFreezed) print('📦 Using Freezed model');
+  print('‼️ Don`t forget run command to generate: dart run build_runner build -d');
 }
 
 void generateService(String serviceName) {
