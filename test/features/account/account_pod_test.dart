@@ -70,6 +70,7 @@ void main() {
         type: AccountType.card,
         currency: Currency.uah,
         balance: 0,
+        isPersonal: true,
       )).thenAnswer((_) async => tNewAccount);
 
       // Чекаємо, поки провайдер завантажить початкові дані
@@ -82,6 +83,7 @@ void main() {
         type: AccountType.card,
         currency: Currency.uah,
         balance: 0,
+        isPersonal: true,
       );
 
       // 3. ASSERT
@@ -91,12 +93,126 @@ void main() {
         type: AccountType.card,
         currency: Currency.uah,
         balance: 0,
+        isPersonal: true,
       )).called(1);
 
       // Перевіряємо, чи список у стейті збільшився
       final state = container.read(accountProvider);
       expect(state.value?.length, 3); // Було 2, стало 3
       expect(state.value?.last.name, 'Скарбничка'); // Останній доданий — це наш новий рахунок
+    });
+
+    test('updateAccount() повинен викликати репозиторій і змінити рахунок у списку', () async {
+      // 1. ARRANGE
+      final container = makeProviderContainer();
+
+      // Припускаємо, що tAccountList вже містить рахунок з id = 1
+      when(() => mockRepository.getList()).thenAnswer((_) async => tAccountList);
+
+      const accountId = 1;
+      const updatedName = 'Оновлена Зарплатна Картка';
+      const updatedType = AccountType.card;
+
+      // Створюємо "оновлену" версію рахунку для імітації відповіді сервера
+      final tUpdatedAccount = tAccountList.firstWhere((a) => a.id == accountId).copyWith(
+        name: updatedName,
+        type: updatedType,
+      );
+
+      // Мокаємо успішне ОНОВЛЕННЯ рахунку
+      when(() => mockRepository.update(
+        id: accountId,
+        name: updatedName,
+        type: updatedType,
+      )).thenAnswer((_) async => tUpdatedAccount);
+
+      // Чекаємо, поки провайдер завантажить початкові дані
+      await container.read(accountProvider.future);
+
+      // 2. ACT
+      // Викликаємо правильний метод — updateAccount
+      await container.read(accountProvider.notifier).updateAccount(
+        id: accountId,
+        name: updatedName,
+        type: updatedType,
+      );
+
+      // 3. ASSERT
+      // Перевіряємо, чи викликався метод update у репозиторії
+      verify(() => mockRepository.update(
+        id: accountId,
+        name: updatedName,
+        type: updatedType,
+      )).called(1);
+
+      // Перевіряємо, чи список у стейті НЕ збільшився (залишився старим)
+      final state = container.read(accountProvider);
+      expect(state.value?.length, tAccountList.length);
+
+      // Знаходимо цей рахунок у новому стейті і перевіряємо, чи оновилися дані
+      final updatedAccountInState = state.value?.firstWhere((a) => a.id == accountId);
+      expect(updatedAccountInState?.name, updatedName);
+      expect(updatedAccountInState?.type, updatedType);
+    });
+
+    test('deleteAccount видаляє рахунок локально після успішного запиту', () async {
+      // СТВОРЮЄМО КОНТЕЙНЕР (цього не вистачало)
+      final container = makeProviderContainer();
+
+      // Arrange
+      final mockAccount = Account(
+          id: 1,
+          name: 'Тест',
+          balance: 100,
+          currency: Currency.uah,
+          type: AccountType.cash,
+          isPersonal: true
+      );
+
+      when(() => mockRepository.getList()).thenAnswer((_) async => [mockAccount]);
+      when(() => mockRepository.delete(1)).thenAnswer((_) async => Future.value());
+
+      // Чекаємо ініціалізації
+      await container.read(accountProvider.future);
+
+      // Act
+      final notifier = container.read(accountProvider.notifier);
+      await notifier.deleteAccount(1);
+
+      // Assert (Виправлено назву мока на mockRepository)
+      verify(() => mockRepository.delete(1)).called(1);
+      final currentState = container.read(accountProvider).value;
+      expect(currentState, isEmpty);
+    });
+
+    test('deleteAccount залишає рахунок у списку, якщо API повертає помилку', () async {
+      // СТВОРЮЄМО КОНТЕЙНЕР
+      final container = makeProviderContainer();
+
+      // Arrange
+      final mockAccount = Account(
+          id: 1,
+          name: 'Тест',
+          balance: 100,
+          currency: Currency.uah,
+          type: AccountType.cash,
+          isPersonal: true
+      );
+
+      when(() => mockRepository.getList()).thenAnswer((_) async => [mockAccount]);
+      when(() => mockRepository.delete(1)).thenThrow(Exception('API Error'));
+
+      await container.read(accountProvider.future);
+
+      // Act
+      final notifier = container.read(accountProvider.notifier);
+
+      expect(() => notifier.deleteAccount(1), throwsException);
+
+      // Assert
+      final currentState = container.read(accountProvider).value;
+      expect(currentState, isNotEmpty);
+      expect(currentState?.first.id, 1);
     });
   });
 }

@@ -14,7 +14,7 @@ void main() {
     test('get returns response data', () async {
       final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api/'));
       DioAdapter(dio: dio, matcher: _pathMatch())
-        ..onGet('items', (server) => server.reply(200, {'items': <int>[1]}));
+        .onGet('items', (server) => server.reply(200, {'items': <int>[1]}));
 
       final client = ApiClient(dio);
       final data = await client.get(path: 'items');
@@ -24,7 +24,7 @@ void main() {
     test('throws ApiException with server message and status from JSON body', () async {
       final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api/'));
       DioAdapter(dio: dio, matcher: _pathMatch())
-        ..onGet('fail', (server) => server.reply(422, {'message': 'bad'}));
+        .onGet('fail', (server) => server.reply(422, {'message': 'bad'}));
 
       final client = ApiClient(dio);
       await expectLater(
@@ -40,7 +40,7 @@ void main() {
     test('uses error key when message is absent', () async {
       final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api/'));
       DioAdapter(dio: dio, matcher: _pathMatch())
-        ..onGet('x', (server) => server.reply(500, {'error': 'oops'}));
+        .onGet('x', (server) => server.reply(500, {'error': 'oops'}));
 
       final client = ApiClient(dio);
       await expectLater(
@@ -66,7 +66,7 @@ void main() {
         ),
       );
       DioAdapter(dio: dio, matcher: _pathMatch())
-        ..onGet('me', (server) => server.reply(200, {'id': 1}));
+        .onGet('me', (server) => server.reply(200, {'id': 1}));
 
       await ApiClient(dio).get(path: 'me');
       expect(seenAuth, 'Bearer tok');
@@ -79,7 +79,7 @@ void main() {
         onUnauthorized: () => unauthorized = true,
       );
       DioAdapter(dio: dio, matcher: _pathMatch())
-        ..onGet('gate', (server) => server.reply(401, {'message': 'nope'}));
+        .onGet('gate', (server) => server.reply(401, {'message': 'nope'}));
 
       final client = ApiClient(dio);
       await expectLater(client.get(path: 'gate'), throwsA(isA<ApiException>()));

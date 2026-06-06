@@ -1,3 +1,4 @@
+import 'package:family_budget/shared/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,22 +8,33 @@ class MainScaffold extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   void _onTap(BuildContext context, int index) {
-    navigationShell.goBranch(
-      index,
-      initialLocation: index == navigationShell.currentIndex,
-    );
+    navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex);
+  }
+
+  String _getTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Сьогодення';
+      case 1:
+        return 'Бюджет';
+      case 2:
+        return 'Цілі';
+      case 3:
+        return 'Навчання';
+      default:
+        return '';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: Text(_getTitle(navigationShell.currentIndex)), centerTitle: true),
+      drawer: SizedBox(width: MediaQuery.of(context).size.width, child: const AppDrawer()),
       body: navigationShell,
-
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Тут буде створення транзакції!')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Тут буде створення транзакції!')));
         },
         shape: const CircleBorder(),
         child: const Icon(Icons.add, size: 32),
@@ -100,7 +112,10 @@ class MainScaffold extends StatelessWidget {
           children: [
             Icon(isActive ? activeIcon : icon, color: color),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
+            Text(
+              label,
+              style: TextStyle(color: color, fontSize: 10, fontWeight: isActive ? FontWeight.bold : FontWeight.normal),
+            ),
           ],
         ),
       ),

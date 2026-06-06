@@ -1,11 +1,18 @@
 import 'package:family_budget/core/providers/bootstrap_providers.dart';
+import 'package:family_budget/core/utils/talker_pod.dart';
 import 'package:family_budget/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:talker/talker.dart';
 
 import 'support/memory_auth_token_store.dart';
 import 'package:family_budget/i18n/strings.g.dart';
+
+
+final silentTalker = Talker(
+  settings: TalkerSettings(useConsoleLogs: false),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +24,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          talkerProvider.overrideWithValue(silentTalker),
           sharedPreferencesProvider.overrideWithValue(prefs),
           authTokenStoreProvider.overrideWithValue(MemoryAuthTokenStore()),
         ],

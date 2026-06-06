@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:talker/talker.dart';
 import 'package:toastification/toastification.dart';
+
 import '../utils/talker_pod.dart';
 
 part 'notification_service.g.dart';
@@ -11,13 +12,9 @@ class NotificationService {
 
   final Talker _talker;
 
-  void showSuccess({
-    required BuildContext context,
-    required String title,
-    String? description,
-  }) {
+  void showSuccess({required BuildContext context, required String title, String? description}) {
     _talker.info('🔔 Success Toast: $title');
-    _showWithBarrier(
+    _showToast(
       context: context,
       type: ToastificationType.success,
       title: title,
@@ -27,13 +24,9 @@ class NotificationService {
     );
   }
 
-  void showError({
-    required BuildContext context,
-    required String title,
-    String? description,
-  }) {
+  void showError({required BuildContext context, required String title, String? description}) {
     _talker.error('🚨 Error Toast: $title');
-    _showWithBarrier(
+    _showToast(
       context: context,
       type: ToastificationType.error,
       title: title,
@@ -43,7 +36,8 @@ class NotificationService {
     );
   }
 
-  void _showWithBarrier({
+
+  void _showToast({
     required BuildContext context,
     required ToastificationType type,
     required String title,
@@ -51,19 +45,6 @@ class NotificationService {
     required Color primaryColor,
     String? description,
   }) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry barrierEntry;
-
-    // Створюємо Barrier
-    barrierEntry = OverlayEntry(
-      builder: (_) => const ModalBarrier(
-        color: Colors.black54,
-        dismissible: false,
-      ),
-    );
-
-    overlay.insert(barrierEntry);
-
     toastification.show(
       context: context,
       type: type,
@@ -72,26 +53,15 @@ class NotificationService {
       title: Text(
         title,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
       ),
       description: description != null ? Text(description) : null,
       alignment: Alignment.topCenter,
-
       icon: Icon(iconData, color: primaryColor, size: 28),
       primaryColor: primaryColor,
       backgroundColor: const Color(0xFF89BBBE),
       borderRadius: BorderRadius.circular(24),
       showProgressBar: false,
-      callbacks: ToastificationCallbacks(
-        onDismissed: (_) {
-
-          if (barrierEntry.mounted) barrierEntry.remove();
-        },
-      ),
     );
   }
 }

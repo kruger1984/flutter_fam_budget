@@ -1,3 +1,5 @@
+import 'package:family_budget/features/account/manage_account_screen.dart';
+import 'package:family_budget/features/category/manage_category_screen.dart';
 import 'package:family_budget/features/family/family_gate_screen.dart';
 import 'package:family_budget/features/family/providers/family_pod.dart';
 import 'package:family_budget/features/home/home_screen.dart';
@@ -56,6 +58,14 @@ GoRouter router(Ref ref) {
           final message = state.extra as String? ?? 'Дякуємо за покупку!';
           return ThanksScreen(message: message);
         },
+      ),
+      GoRoute(
+        path: '/manage-accounts',
+        builder: (context, state) => const ManageAccountsScreen(),
+      ),
+      GoRoute(
+        path: '/manage-categories',
+        builder: (context, state) => const ManageCategoriesScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

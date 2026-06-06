@@ -6,8 +6,8 @@ import 'package:family_budget/core/cache/app_cache.dart';
 import 'package:family_budget/core/cache/cache_pods.dart';
 import 'package:family_budget/core/utils/talker_pod.dart';
 import 'package:family_budget/features/account/models/account.dart';
-import 'package:family_budget/features/account/models/currency.dart';
 import 'package:family_budget/features/account/models/account_type.dart';
+import 'package:family_budget/features/account/models/currency.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:talker/talker.dart';
 
@@ -25,16 +25,44 @@ class AccountRepository {
     required AccountType type,
     required Currency currency,
     required int balance,
-    int? userId,
-    int? familyId,
+    required bool isPersonal,
   }) async {
     try {
-      final response = await _api.post(path: 'accounts', body: {'name': name});
+      final response = await _api.post(
+        path: 'accounts',
+        body: {'name': name, 'type': type.name, 'currency': currency.name.toUpperCase(), 'balance': balance, 'is_personal': isPersonal},
+      );
       final Map<String, dynamic> data = response['data'];
-      final family = Account.fromJson(data);
-      return family;
+      final account = Account.fromJson(data);
+      final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
+      await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
+
+      return account;
     } catch (e, st) {
-      _talker.error('FamilyRepository: failed to create family', e, st);
+      _talker.error('AccountRepository: failed to create account', e, st);
+      rethrow;
+    }
+  }
+
+  Future<Account> update({
+    required int id,
+    String? name,
+    AccountType? type,
+  }) async {
+    try {
+      final response = await _api.put(
+        path: 'accounts/$id',
+        data: {'name': name, 'type': type!.name},
+      );
+
+      final Map<String, dynamic> data = response['data'];
+      final account = Account.fromJson(data);
+      final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
+      await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
+
+      return account;
+    } catch (e, st) {
+      _talker.error('AccountRepository: failed to update account id: $id', e, st);
       rethrow;
     }
   }
@@ -63,6 +91,18 @@ class AccountRepository {
       return data.map((model) => Account.fromJson(model as Map<String, dynamic>)).toList();
     } catch (e, st) {
       _talker.error('FamilyRepository: failed to fetch families', e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> delete(int id) async {
+    try {
+      await _api.delete(path: 'accounts/$id');
+      final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
+      await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
+
+    } catch (e, st) {
+      _talker.error('AccountRepository: failed to delete accountId: $id}', e, st);
       rethrow;
     }
   }

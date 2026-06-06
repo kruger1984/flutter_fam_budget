@@ -1,8 +1,8 @@
 import 'package:family_budget/core/api/api_client.dart';
 import 'package:family_budget/core/cache/app_cache.dart';
 import 'package:family_budget/features/account/models/account.dart';
-import 'package:family_budget/features/account/models/currency.dart';
 import 'package:family_budget/features/account/models/account_type.dart';
+import 'package:family_budget/features/account/models/currency.dart';
 import 'package:family_budget/features/account/repository/account_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -57,14 +57,14 @@ void main() {
     const type = AccountType.cash;
     const currency = Currency.uah;
     const balance = 0;
-    const userId = 1;
+    // const userId = 1;
     final mockJsonResponse = {
       "success": true,
       "data": {
         "id": accountId,
         "name": name,
         "type": type.name,
-        "currency": currency.name,
+        "currency": currency.name.toUpperCase(),
         "balance": balance,
         "user_id": 1,
         "family_id": null,
@@ -80,7 +80,7 @@ void main() {
     ).thenAnswer((_) async => mockJsonResponse);
 
     // ACT
-    final result = await repository.create(name: name, type: type, currency: currency, balance: balance, userId: userId);
+    final result = await repository.create(name: name, type: type, currency: currency, balance: balance, isPersonal: true);
 
     // ASSERT
     expect(result, isA<Account>());
@@ -88,6 +88,56 @@ void main() {
     expect(result.name, name);
     expect(result.currency, currency);
     expect(result.type, type);
+  });
+
+  test('update() повинен відправити PUT запит та повернути оновлений Account', () async {
+    // 1. ARRANGE
+    const accountId = 1;
+    const updatedName = 'Оновлена Зарплатна Картка';
+    const updatedType = AccountType.card;
+    const existingBalance = 5000;
+    const existingCurrency = Currency.uah;
+
+    // Імітуємо відповідь сервера після оновлення
+    final mockJsonResponse = {
+      "success": true,
+      "data": {
+        "id": accountId,
+        "name": updatedName,
+        "type": updatedType.name,
+        "currency": existingCurrency.name.toUpperCase(),
+        "balance": existingBalance,
+        "user_id": 1,
+        "family_id": null,
+        "is_personal": true,
+      },
+    };
+
+    when(
+      () => mockApi.put(
+        path: 'accounts/$accountId',
+        data: any(named: 'data'),
+      ),
+    ).thenAnswer((_) async => mockJsonResponse);
+
+    // 2. ACT
+    // Викликаємо оновлення. Валюту НЕ передаємо!
+    final result = await repository.update(id: accountId, name: updatedName, type: updatedType);
+
+    // 3. ASSERT
+    expect(result, isA<Account>());
+    expect(result.id, accountId);
+    expect(result.name, updatedName);
+    expect(result.type, updatedType);
+    expect(result.balance, existingBalance);
+    expect(result.currency, existingCurrency);
+
+    verify(
+      () => mockApi.put(
+        path: 'accounts/$accountId',
+        data: any(named: 'data'),
+      ),
+    ).called(1);
   });
 
   test('getList() повинен правильно мапити список рахунків користувача і сім\'ї', () async {
@@ -98,13 +148,12 @@ void main() {
     final mockJsonResponse = {
       "success": true,
       "data": [
-        {"id": 10, "name": 'my Account', "type": 'bank', "currency": 'usd', "balance": 0, "user_id": userId, "family_id": null, "is_personal": true},
-        {"id": 20, "name": 'Family Account', "type": 'cash', "currency": 'uah', "balance": 0, "family_id": familyId, "is_personal": false},
+        {"id": 10, "name": 'my Account', "type": 'bank', "currency": 'USD', "balance": 0, "user_id": userId, "family_id": null, "is_personal": true},
+        {"id": 20, "name": 'Family Account', "type": 'cash', "currency": 'UAH', "balance": 0, "family_id": familyId, "is_personal": false},
       ],
     };
 
-    when(() => mockCache.getRaw(namespace: 'auth', key: 'active_family_id'))
-        .thenAnswer((_) async => familyId.toString());
+    when(() => mockCache.getRaw(namespace: 'auth', key: 'active_family_id')).thenAnswer((_) async => familyId.toString());
 
     when(() => mockApi.get(path: 'accounts')).thenAnswer((_) async => mockJsonResponse);
     when(
@@ -142,35 +191,22 @@ void main() {
     ).called(1);
   });
 
-  // test('getAccount(id) повинен повернути одну повноцінну модель сім\'ї', () async {
-  //   // 1. ARRANGE
-  //   const familyId = 10;
-  //
-  //   final mockJsonResponse = {
-  //     "success": true,
-  //     "data": {
-  //       // Тут об'єкт, а не масив
-  //       "id": familyId,
-  //       "name": "My Own Family",
-  //       "role": "owner",
-  //       "owner": {"id": 1, "name": "Me", "email": "me@test.com"},
-  //       "users": [
-  //         {"id": 1, "name": "Me", "email": "me@test.com"},
-  //         {"id": 2, "name": "Wife", "email": "wife@test.com"},
-  //       ],
-  //     },
-  //   };
-  //
-  //   // Мокаємо запит до конкретного ID
-  //   when(() => mockApi.get(path: 'families/$familyId')).thenAnswer((_) async => mockJsonResponse);
-  //
-  //   // 2. ACT
-  //   final result = await repository.getFamily(familyId);
-  //
-  //   // 3. ASSERT
-  //   expect(result, isA<Family>());
-  //   expect(result.id, familyId);
-  //   expect(result.users.length, 2);
-  //   expect(result.owner.name, 'Me');
-  // });
+  test('delete() повинен відправити DELETE запит на правильний шлях', () async {
+    // 1. ARRANGE
+    const accountId = 1;
+
+    // Використовуємо any(named: 'path'), щоб мок не падав через зайвий слеш
+    // Laravel response()->noContent() повертає пусту відповідь, тому імітуємо повернення null
+    when(() => mockApi.delete(path: any(named: 'path'))).thenAnswer((_) async => null);
+
+    // 2. ACT
+    await repository.delete(accountId);
+
+    // 3. ASSERT
+    // А тут ми перевіряємо, чи дійсно шлях містить 'accounts/1'.
+    // Підстав сюди точний рядок з твого AccountRepository (зі слешем чи без)
+    verify(
+      () => mockApi.delete(path: 'accounts/$accountId'), // Якщо падає тут — зміни на '/accounts/$accountId'
+    ).called(1);
+  });
 }

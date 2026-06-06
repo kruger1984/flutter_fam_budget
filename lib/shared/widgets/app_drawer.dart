@@ -13,6 +13,9 @@ class AppDrawer extends ConsumerWidget {
     final family = ref.watch(familyProvider).value;
 
     return Drawer(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero,
+      ),
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -43,16 +46,16 @@ class AppDrawer extends ConsumerWidget {
             leading: const Icon(Icons.account_balance_wallet),
             title: const Text('Управління рахунками'),
             onTap: () {
-              // TODO: Перехід на екран налаштування рахунків
               Navigator.pop(context);
+              context.push('/manage-accounts');
             },
           ),
           ListTile(
             leading: const Icon(Icons.category),
             title: const Text('Категорії транзакцій'),
             onTap: () {
-              // TODO: Перехід на екран дерева категорій
               Navigator.pop(context);
+              context.push('/manage-categories');
             },
           ),
           const Divider(),
