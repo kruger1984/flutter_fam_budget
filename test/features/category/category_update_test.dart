@@ -70,7 +70,15 @@ void main() {
       expect(result.color, updatedColor);
       expect(result.parentId, isNull);
 
-      verify(() => mockApi.put(path: 'categories/$categoryId', data: {'name': updatedName, 'icon': HeroIcons.truck, 'color': updatedColor, 'parent_id': null,})).called(1);
+      verify(() => mockApi.put(
+        path: 'categories/$categoryId',
+        data: {
+          'name': updatedName,
+          'icon': 'truck',
+          'color': updatedColor,
+          'parent_id': null,
+        },
+      )).called(1);
       verify(() => mockCache.remove(namespace: 'categories', key: 'family_11')).called(1);
     });
 
@@ -106,7 +114,7 @@ void main() {
               as Map<String, dynamic>;
 
       expect(captured['name'], updatedName);
-      expect(captured['icon'], HeroIcons.fire);
+      expect(captured['icon'], 'fire');
       expect(captured.containsKey('color'), isFalse);
     });
 
@@ -130,7 +138,15 @@ void main() {
 
       expect(result.icon, isNull);
 
-      verify(() => mockApi.put(path: 'categories/$categoryId', data: {'name': updatedName, 'icon': null, 'color': '#2196F3', 'parent_id': null,})).called(1);
+      verify(() => mockApi.put(
+        path: 'categories/$categoryId',
+        data: {
+          'name': updatedName,
+          'icon': null,
+          'color': '#2196F3',
+          'parent_id': null,
+        },
+      )).called(1);
     });
   });
 
@@ -165,7 +181,13 @@ void main() {
       const updatedColor = '#4CAF50';
       final apiResponse = tRootCategory.copyWith(name: updatedName, color: updatedColor, children: []);
 
-      when(() => mockRepository.update(id: 1, name: updatedName, icon: HeroIcons.truck, color: updatedColor)).thenAnswer((_) async => apiResponse);
+      when(() => mockRepository.update(
+            id: 1,
+            name: updatedName,
+            icon: HeroIcons.truck,
+            color: updatedColor,
+            parentId: any(named: 'parentId'),
+          )).thenAnswer((_) async => apiResponse);
 
       await container.read(categoryProvider.future);
       await container.read(categoryProvider.notifier).updateCategory(id: 1, name: updatedName, icon: HeroIcons.truck, color: updatedColor);
@@ -178,7 +200,13 @@ void main() {
       expect(state.first.children.length, 1);
       expect(state.first.children.first.name, 'Старе паливо');
 
-      verify(() => mockRepository.update(id: 1, name: updatedName, icon: HeroIcons.truck, color: updatedColor)).called(1);
+      verify(() => mockRepository.update(
+            id: 1,
+            name: updatedName,
+            icon: HeroIcons.truck,
+            color: updatedColor,
+            parentId: any(named: 'parentId'),
+          )).called(1);
     });
 
     test('[Підкатегорія] оновлює child і викликає update з color: null', () async {
@@ -190,7 +218,13 @@ void main() {
       const updatedName = 'Бензин';
       final apiResponse = tSubCategory.copyWith(name: updatedName, icon: null);
 
-      when(() => mockRepository.update(id: 2, name: updatedName, icon: null, color: null)).thenAnswer((_) async => apiResponse);
+      when(() => mockRepository.update(
+            id: 2,
+            name: updatedName,
+            icon: null,
+            color: null,
+            parentId: any(named: 'parentId'),
+          )).thenAnswer((_) async => apiResponse);
 
       await container.read(categoryProvider.future);
       await container.read(categoryProvider.notifier).updateCategory(id: 2, name: updatedName, icon: null, color: null);
@@ -202,7 +236,13 @@ void main() {
       expect(updatedChild.name, updatedName);
       expect(updatedChild.icon, isNull);
 
-      verify(() => mockRepository.update(id: 2, name: updatedName, icon: null, color: null)).called(1);
+      verify(() => mockRepository.update(
+            id: 2,
+            name: updatedName,
+            icon: null,
+            color: null,
+            parentId: any(named: 'parentId'),
+          )).called(1);
     });
 
     test('відкачує state і пробросує помилку, якщо update кидає exception', () async {
@@ -214,6 +254,7 @@ void main() {
           name: any(named: 'name'),
           icon: any(named: 'icon'),
           color: any(named: 'color'),
+          parentId: any(named: 'parentId'),
         ),
       ).thenThrow(Exception('API Error'));
 

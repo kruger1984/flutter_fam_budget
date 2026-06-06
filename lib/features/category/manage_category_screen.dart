@@ -1,3 +1,4 @@
+import 'package:family_budget/core/services/notification_service.dart';
 import 'package:family_budget/features/category/models/category.dart';
 import 'package:family_budget/features/category/providers/category_pod.dart';
 import 'package:family_budget/features/category/widgets/create_or_edit_category_sheet.dart';
@@ -23,7 +24,6 @@ class ManageCategoriesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Помилка: $err')),
         data: (categories) {
-
           // ВИПРАВЛЕННЯ 2: Фільтруємо список. Залишаємо ТІЛЬКИ головні категорії.
           final rootCategoriesList = categories.where((c) => c.isRoot).toList();
 
@@ -36,40 +36,61 @@ class ManageCategoriesScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final rootCategory = rootCategoriesList[index];
 
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ExpansionTile(
-                  leading: _buildIcon(rootCategory),
-
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(rootCategory.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      if (!rootCategory.isSystem)
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _showSheet(context, rootCategory),
+              return Dismissible(
+                key: ValueKey('root_${rootCategory.id}'),
+                direction: rootCategory.isSystem ? DismissDirection.none : DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20.0),
+                  color: Colors.red,
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                confirmDismiss: (direction) => _confirmDelete(context, rootCategory.name),
+                onDismissed: (_) => _deleteCategory(ref, context, rootCategory.id),
+                child: Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ExpansionTile(
+                    leading: _buildIcon(rootCategory),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(rootCategory.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                         ),
-                    ],
+                        if (!rootCategory.isSystem)
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () => _showSheet(context, rootCategory),
+                          ),
+                      ],
+                    ),
+                    trailing: rootCategory.children.isEmpty ? const SizedBox.shrink() : null,
+                    children: rootCategory.children.map((subCategory) {
+                      return Dismissible(
+                        key: ValueKey('sub_${subCategory.id}'),
+                        direction: subCategory.isSystem ? DismissDirection.none : DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20.0),
+                          color: Colors.red,
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        confirmDismiss: (direction) => _confirmDelete(context, subCategory.name),
+                        onDismissed: (_) => _deleteCategory(ref, context, subCategory.id),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.only(left: 48, right: 16),
+                          leading: _buildIcon(subCategory),
+                          title: Text(subCategory.name),
+                          trailing: subCategory.isSystem
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.edit, size: 20, color: Colors.blueGrey),
+                                  onPressed: () => _showSheet(context, subCategory),
+                                ),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                  trailing: rootCategory.children.isEmpty ? const SizedBox.shrink() : null,
-
-                  children:  rootCategory.children.map((subCategory) {
-                    return ListTile(
-                      contentPadding: const EdgeInsets.only(left: 48, right: 16),
-                      leading: _buildIcon(subCategory),
-                      title: Text(subCategory.name),
-
-                      // У звичайного ListTile немає стрілочки, тому тут trailing - це ідеальне місце
-                      trailing: subCategory.isSystem
-                          ? null
-                          : IconButton(
-                        icon: const Icon(Icons.edit, size: 20, color: Colors.blueGrey),
-                        onPressed: () => _showSheet(context, subCategory),
-                      ),
-                    );
-                  }).toList(),
                 ),
               );
             },
@@ -77,6 +98,37 @@ class ManageCategoriesScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  Future<bool?> _confirmDelete(BuildContext context, String name) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Видалити категорію?'),
+        content: Text('Ви впевнені, що хочете видалити "$name"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Скасувати')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Видалити'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteCategory(WidgetRef ref, BuildContext context, int id) async {
+    try {
+      await ref.read(categoryProvider.notifier).deleteCategory(id);
+      if (context.mounted) {
+        ref.read(notificationServiceProvider).showSuccess(context: context, title: 'Категорію видалено');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ref.read(notificationServiceProvider).showError(context: context, title: 'Помилка видалення', description: e.toString());
+      }
+    }
   }
 
   Widget _buildIcon(Category category) {
