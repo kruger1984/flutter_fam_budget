@@ -4,11 +4,13 @@ import 'package:family_budget/features/family/family_gate_screen.dart';
 import 'package:family_budget/features/family/providers/family_pod.dart';
 import 'package:family_budget/features/home/home_screen.dart';
 import 'package:family_budget/features/home/place_holder_screen.dart';
+import 'package:family_budget/features/transaction/transaction_screen.dart';
 import 'package:family_budget/shared/widgets/main_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/account/models/account.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/payment/payment_screen.dart';
@@ -66,6 +68,13 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: '/manage-categories',
         builder: (context, state) => const ManageCategoriesScreen(),
+      ),
+      GoRoute(
+        path: '/transactions',
+        builder: (context, state) {
+          final account = state.extra as Account;
+          return TransactionScreen(account: account);
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

@@ -1,6 +1,6 @@
-import 'package:family_budget/core/utils/hero_icon_converter.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:heroicons/heroicons.dart';
+
+import 'app_icon.dart';
 
 part 'category.freezed.dart';
 part 'category.g.dart';
@@ -12,7 +12,7 @@ abstract class Category with _$Category {
   const factory Category({
     required int id,
     required String name,
-    @HeroIconConverter() HeroIcons? icon,
+    @JsonKey(unknownEnumValue: AppIcon.question) AppIcon? icon,
     String? color,
     @JsonKey(name: 'parent_id') int? parentId,
     @JsonKey(name: 'family_id') int? familyId,

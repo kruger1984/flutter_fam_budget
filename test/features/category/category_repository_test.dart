@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:family_budget/core/api/api_client.dart';
 import 'package:family_budget/core/cache/app_cache.dart';
+import 'package:family_budget/features/category/models/app_icon.dart';
 import 'package:family_budget/features/category/models/category.dart';
 import 'package:family_budget/features/category/repository/category_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:talker/talker.dart';
 
@@ -63,7 +63,7 @@ void main() {
 
       final result = await repository.create(
         name: 'Нова категорія',
-        icon: HeroIcons.star,
+        icon: AppIcon.shoppingCart,
         color: '#FFFFFF',
         parentId: null,
       );

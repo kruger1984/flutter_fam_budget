@@ -6,11 +6,10 @@ import 'package:family_budget/core/cache/app_cache.dart';
 import 'package:family_budget/core/cache/cache_pods.dart';
 import 'package:family_budget/core/utils/talker_pod.dart';
 import 'package:family_budget/features/category/models/category.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:talker/talker.dart';
 
-import '../../../core/utils/hero_icon_converter.dart';
+import '../models/app_icon.dart';
 
 part 'category_repository.g.dart';
 
@@ -21,18 +20,20 @@ class CategoryRepository {
   final Talker _talker;
   final AppCache _cache;
 
-  Future<Category> create({required String name, HeroIcons? icon, String? color, int? parentId}) async {
+  Future<Category> create({required String name, AppIcon? icon, String? color, int? parentId}) async {
     try {
       final response = await _api.post(path: 'categories', body: {
         'name': name,
-        'icon': icon != null ? const HeroIconConverter().toJson(icon) : null,
+        'icon': icon?.backendValue,
         'color': color,
         'parent_id': parentId,
       });
       final Map<String, dynamic> data = response['data'];
       final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
 
-      await _cache.remove(namespace: 'categories', key: 'family_$familyId');
+      if (familyId != null) {
+        await _cache.remove(namespace: 'categories', key: 'family_$familyId');
+      }
 
       return Category.fromJson(data);
     } catch (e, st) {
@@ -41,11 +42,11 @@ class CategoryRepository {
     }
   }
 
-  Future<Category> update({required int id, required String name, HeroIcons? icon, String? color, int? parentId}) async {
+  Future<Category> update({required int id, required String name, AppIcon? icon, String? color, int? parentId}) async {
     try {
       final requestData = <String, dynamic>{
         'name': name,
-        'icon': icon != null ? const HeroIconConverter().toJson(icon) : null,
+        'icon': icon?.backendValue,
         'parent_id': parentId,
       };
       if (color != null) requestData['color'] = color;
@@ -54,7 +55,9 @@ class CategoryRepository {
 
       final Map<String, dynamic> data = response['data'];
       final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
-      await _cache.remove(namespace: 'categories', key: 'family_$familyId');
+      if (familyId != null) {
+        await _cache.remove(namespace: 'categories', key: 'family_$familyId');
+      }
 
       return Category.fromJson(data);
     } catch (e, st) {
@@ -62,10 +65,11 @@ class CategoryRepository {
       rethrow;
     }
   }
+
   Future<List<Category>> getList() async {
     final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
+    if (familyId == null) return [];
 
-    // 1. Пробуємо дістати з кешу
     final cachedRaw = await _cache.getRaw(namespace: 'categories', key: 'family_$familyId') as String?;
 
     if (cachedRaw != null) {
@@ -83,7 +87,12 @@ class CategoryRepository {
       final response = await _api.get(path: 'categories');
       final List<dynamic> data = response['data'];
 
-      await _cache.putRaw(namespace: 'categories', key: 'family_$familyId', value: jsonEncode(data), ttl: const Duration(hours: 24));
+      await _cache.putRaw(
+        namespace: 'categories',
+        key: 'family_$familyId',
+        value: jsonEncode(data),
+        ttl: const Duration(hours: 24),
+      );
 
       return data.map((model) => Category.fromJson(model as Map<String, dynamic>)).toList();
     } catch (e, st) {
@@ -96,7 +105,9 @@ class CategoryRepository {
     try {
       await _api.delete(path: 'categories/$id');
       final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
-      await _cache.remove(namespace: 'categories', key: 'family_$familyId');
+      if (familyId != null) {
+        await _cache.remove(namespace: 'categories', key: 'family_$familyId');
+      }
     } catch (e, st) {
       _talker.error('CategoryRepository: failed to delete categoryId: $id', e, st);
       rethrow;

@@ -1,4 +1,5 @@
 import 'package:family_budget/core/services/notification_service.dart';
+import 'package:family_budget/core/utils/talker_pod.dart';
 import 'package:family_budget/features/category/models/category.dart';
 import 'package:family_budget/features/category/providers/category_pod.dart';
 import 'package:family_budget/features/category/widgets/create_or_edit_category_sheet.dart';
@@ -12,6 +13,7 @@ class ManageCategoriesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoriesState = ref.watch(categoryProvider);
+    final talker = ref.read(talkerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Категорії'), centerTitle: true),
@@ -24,7 +26,6 @@ class ManageCategoriesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Помилка: $err')),
         data: (categories) {
-          // ВИПРАВЛЕННЯ 2: Фільтруємо список. Залишаємо ТІЛЬКИ головні категорії.
           final rootCategoriesList = categories.where((c) => c.isRoot).toList();
 
           if (rootCategoriesList.isEmpty) {
@@ -35,6 +36,8 @@ class ManageCategoriesScreen extends ConsumerWidget {
             itemCount: rootCategoriesList.length,
             itemBuilder: (context, index) {
               final rootCategory = rootCategoriesList[index];
+
+              talker.debug(rootCategory);
 
               return Dismissible(
                 key: ValueKey('root_${rootCategory.id}'),
@@ -132,6 +135,8 @@ class ManageCategoriesScreen extends ConsumerWidget {
   }
 
   Widget _buildIcon(Category category) {
+
+
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -139,7 +144,7 @@ class ManageCategoriesScreen extends ConsumerWidget {
         shape: BoxShape.circle,
       ),
       child: category.icon != null
-          ? HeroIcon(category.icon!, size: 24, color: category.color != null ? Color(int.parse(category.color!.replaceFirst('#', '0xFF'))) : Colors.grey)
+          ? HeroIcon(category.icon!.heroData, size: 24, color: category.color != null ? Color(int.parse(category.color!.replaceFirst('#', '0xFF'))) : Colors.grey)
           : const Icon(Icons.category, size: 24, color: Colors.grey),
     );
   }

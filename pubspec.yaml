@@ -59,6 +59,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   heroicons: ^0.11.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

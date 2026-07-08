@@ -2,7 +2,6 @@ import 'package:family_budget/features/account/models/account.dart';
 import 'package:family_budget/features/account/models/currency.dart';
 import 'package:family_budget/features/account/models/account_type.dart';
 import 'package:family_budget/features/account/repository/account_repository.dart';
-// Зміни цей імпорт на правильний шлях до твого майбутнього файлу провайдера
 import 'package:family_budget/features/account/providers/account_pod.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

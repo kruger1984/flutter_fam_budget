@@ -1,6 +1,9 @@
 import 'package:family_budget/features/account/providers/account_pod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/utils/extensions.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -22,14 +25,17 @@ class HomeScreen extends ConsumerWidget {
               return Column(children: [
                 ...accounts.map(
                       (account) => Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(account.name),
-                          Text('${account.balance} ${account.currency.name}'),
-                        ],
+                    child: InkWell(
+                      onTap: () => context.push('/transactions', extra: account),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(account.name),
+                            Text(account.balance.toMoney(account.currency)),
+                          ],
+                        ),
                       ),
                     ),
                   ),

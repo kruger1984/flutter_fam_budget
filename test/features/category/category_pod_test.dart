@@ -1,10 +1,10 @@
 import 'package:family_budget/core/utils/talker_pod.dart';
+import 'package:family_budget/features/category/models/app_icon.dart';
 import 'package:family_budget/features/category/models/category.dart';
 import 'package:family_budget/features/category/providers/category_pod.dart';
 import 'package:family_budget/features/category/repository/category_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:talker/talker.dart';
 
@@ -13,8 +13,8 @@ class MockCategoryRepository extends Mock implements CategoryRepository {}
 void main() {
   late MockCategoryRepository mockRepository;
 
-  final tRootCategory = Category(id: 1, name: 'Транспорт', icon: HeroIcons.truck, color: '#000', parentId: null, children: []);
-  final tSubCategory = Category(id: 2, name: 'Паливо', icon: HeroIcons.fire, color: '#000', parentId: 1, children: []);
+  final tRootCategory = Category(id: 1, name: 'Транспорт', icon: AppIcon.truck, color: '#000', parentId: null, children: []);
+  final tSubCategory = Category(id: 2, name: 'Паливо', icon: AppIcon.shoppingCart, color: '#000', parentId: 1, children: []);
 
   setUp(() {
     mockRepository = MockCategoryRepository();
@@ -48,12 +48,12 @@ void main() {
       final container = makeProviderContainer();
       when(() => mockRepository.getList()).thenAnswer((_) async => []);
 
-      final newRoot = Category(id: 3, name: 'Їжа', icon: HeroIcons.cake, color: '#fff', parentId: null, children: []);
-      when(() => mockRepository.create(name: 'Їжа', icon: HeroIcons.cake, color: '#fff', parentId: null))
+      final newRoot = Category(id: 3, name: 'Їжа', icon: AppIcon.shoppingCart, color: '#fff', parentId: null, children: []);
+      when(() => mockRepository.create(name: 'Їжа', icon: AppIcon.shoppingCart, color: '#fff', parentId: null))
           .thenAnswer((_) async => newRoot);
 
       await container.read(categoryProvider.future);
-      await container.read(categoryProvider.notifier).createCategory(name: 'Їжа', icon: HeroIcons.cake, color: '#fff', parentId: null);
+      await container.read(categoryProvider.notifier).createCategory(name: 'Їжа', icon: AppIcon.shoppingCart, color: '#fff', parentId: null);
 
       final state = container.read(categoryProvider).value!;
       expect(state.length, 1);
@@ -67,11 +67,11 @@ void main() {
 
       // Створюємо підкатегорію (Паливо, parentId: 1)
       // Важливо: в UI для підкатегорії color відправляється як null (колір наслідується на бекенді).
-      when(() => mockRepository.create(name: 'Паливо', icon: HeroIcons.fire, color: null, parentId: 1))
+      when(() => mockRepository.create(name: 'Паливо', icon: AppIcon.home, color: null, parentId: 1))
           .thenAnswer((_) async => tSubCategory);
 
       await container.read(categoryProvider.future);
-      await container.read(categoryProvider.notifier).createCategory(name: 'Паливо', icon: HeroIcons.fire, color: null, parentId: 1);
+      await container.read(categoryProvider.notifier).createCategory(name: 'Паливо', icon: AppIcon.home, color: null, parentId: 1);
 
       final state = container.read(categoryProvider).value!;
 
@@ -92,7 +92,7 @@ void main() {
       final previousState = container.read(categoryProvider).value!;
 
       expect(
-        () => container.read(categoryProvider.notifier).createCategory(name: 'Їжа', icon: HeroIcons.cake, color: '#fff', parentId: null),
+        () => container.read(categoryProvider.notifier).createCategory(name: 'Їжа', icon: AppIcon.shoppingCart, color: '#fff', parentId: null),
         throwsException,
       );
 

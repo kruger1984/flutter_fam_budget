@@ -35,7 +35,9 @@ class AccountRepository {
       final Map<String, dynamic> data = response['data'];
       final account = Account.fromJson(data);
       final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
-      await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
+      if (familyId != null) {
+        await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
+      }
 
       return account;
     } catch (e, st) {
@@ -58,7 +60,9 @@ class AccountRepository {
       final Map<String, dynamic> data = response['data'];
       final account = Account.fromJson(data);
       final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
-      await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
+      if (familyId != null) {
+        await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
+      }
 
       return account;
     } catch (e, st) {
@@ -69,8 +73,10 @@ class AccountRepository {
 
   Future<List<Account>> getList() async {
     final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
+    if (familyId == null) return [];
 
     final cachedRaw = await _cache.getRaw(namespace: 'accounts', key: 'user_accounts_family_$familyId') as String?;
+    await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
 
     if (cachedRaw != null) {
       try {
@@ -86,7 +92,12 @@ class AccountRepository {
       final response = await _api.get(path: 'accounts');
       final List<dynamic> data = response['data'];
 
-      await _cache.putRaw(namespace: 'accounts', key: 'user_accounts_family_$familyId', value: jsonEncode(data), ttl: Duration(hours: 24));
+      await _cache.putRaw(
+        namespace: 'accounts',
+        key: 'user_accounts_family_$familyId',
+        value: jsonEncode(data),
+        ttl: const Duration(seconds: 30),
+      );
 
       return data.map((model) => Account.fromJson(model as Map<String, dynamic>)).toList();
     } catch (e, st) {
@@ -99,8 +110,9 @@ class AccountRepository {
     try {
       await _api.delete(path: 'accounts/$id');
       final familyId = await _cache.getRaw(namespace: 'auth', key: 'active_family_id');
-      await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
-
+      if (familyId != null) {
+        await _cache.remove(namespace: 'accounts', key: 'user_accounts_family_$familyId');
+      }
     } catch (e, st) {
       _talker.error('AccountRepository: failed to delete accountId: $id}', e, st);
       rethrow;

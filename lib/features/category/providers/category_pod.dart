@@ -1,7 +1,8 @@
 import 'package:family_budget/features/category/models/category.dart';
 import 'package:family_budget/features/category/repository/category_repository.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../models/app_icon.dart';
 
 part 'category_pod.g.dart';
 
@@ -13,7 +14,7 @@ class CategoryNotifier extends _$CategoryNotifier {
     return await repository.getList();
   }
 
-  Future<void> createCategory({required String name, HeroIcons? icon, String? color, int? parentId}) async {
+  Future<void> createCategory({required String name, AppIcon? icon, String? color, int? parentId}) async {
     final previousState = state.value ?? [];
     state = const AsyncLoading();
 
@@ -37,7 +38,7 @@ class CategoryNotifier extends _$CategoryNotifier {
     }
   }
 
-  Future<void> updateCategory({required int id, required String name, HeroIcons? icon, String? color, int? parentId}) async {
+  Future<void> updateCategory({required int id, required String name, AppIcon? icon, String? color, int? parentId}) async {
     final previousState = state.value ?? [];
     state = const AsyncLoading();
 

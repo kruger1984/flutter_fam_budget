@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/helpers.dart';
+
 class CreateOrEditAccountSheet extends ConsumerStatefulWidget {
   final Account? account;
 
@@ -32,7 +34,7 @@ class _CreateAccountSheetState extends ConsumerState<CreateOrEditAccountSheet> {
     super.initState();
     if (widget.account != null) {
       _nameController.text = widget.account!.name;
-      _balanceController.text = widget.account!.balance.toString();
+      _balanceController.text = (widget.account!.balance / 100).toString();
       _selectedType = widget.account!.type;
       _selectedCurrency = widget.account!.currency;
       _isPersonal = widget.account!.isPersonal;
@@ -52,24 +54,33 @@ class _CreateAccountSheetState extends ConsumerState<CreateOrEditAccountSheet> {
     setState(() => _isLoading = true);
 
     try {
-      await ref
-          .read(accountProvider.notifier)
-          .createAccount(
-            name: _nameController.text.trim(),
-            type: _selectedType,
-            currency: _selectedCurrency,
-            balance: int.parse(_balanceController.text),
-            isPersonal: _isPersonal,
-          );
+      if (widget.account == null) {
+        await ref.read(accountProvider.notifier).createAccount(
+          name: _nameController.text.trim(),
+          type: _selectedType,
+          currency: _selectedCurrency,
+          balance: formatAmountToSave(_balanceController.text),
+          isPersonal: _isPersonal,
+        );
+      } else {
+        await ref.read(accountProvider.notifier).updateAccount(
+          id: widget.account!.id,
+          name: _nameController.text.trim(),
+          type: _selectedType,
+        );
+      }
 
       if (mounted) {
-        ref.read(notificationServiceProvider).showSuccess(context: context, title: 'Рахунок успішно створено!');
+        ref.read(notificationServiceProvider).showSuccess(
+            context: context,
+            title: widget.account == null ? 'Рахунок успішно створено!' : 'Рахунок оновлено!'
+        );
 
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ref.read(notificationServiceProvider).showError(context: context, title: 'Помилка створення', description: e.toString());
+        ref.read(notificationServiceProvider).showError(context: context, title: 'Помилка', description: e.toString());
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -79,6 +90,7 @@ class _CreateAccountSheetState extends ConsumerState<CreateOrEditAccountSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final isEditing = widget.account != null;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomPadding, left: 16.0, right: 16.0, top: 24.0),
@@ -89,9 +101,9 @@ class _CreateAccountSheetState extends ConsumerState<CreateOrEditAccountSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Новий рахунок',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              Text(
+                isEditing ? 'Редагувати рахунок' : 'Новий рахунок',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -105,8 +117,11 @@ class _CreateAccountSheetState extends ConsumerState<CreateOrEditAccountSheet> {
 
               TextFormField(
                 controller: _balanceController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                enabled: widget.account == null,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d{0,2}')),
+                ],
                 decoration: const InputDecoration(labelText: 'Початковий баланс', border: OutlineInputBorder()),
                 validator: (val) => val != null && val.isEmpty ? 'Введіть баланс' : null,
               ),
@@ -132,7 +147,7 @@ class _CreateAccountSheetState extends ConsumerState<CreateOrEditAccountSheet> {
                       items: Currency.values.map((currency) {
                         return DropdownMenuItem(value: currency, child: Text(currency.name.toUpperCase()));
                       }).toList(),
-                      onChanged: (val) => setState(() => _selectedCurrency = val!),
+                      onChanged: isEditing ? null : (val) => setState(() => _selectedCurrency = val!),
                     ),
                   ),
                 ],
@@ -153,7 +168,7 @@ class _CreateAccountSheetState extends ConsumerState<CreateOrEditAccountSheet> {
                 style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                 child: _isLoading
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Створити', style: TextStyle(fontSize: 16)),
+                    : Text(isEditing ? 'Зберегти' : 'Створити', style: const TextStyle(fontSize: 16)),
               ),
               const SizedBox(height: 16),
             ],

@@ -1,12 +1,12 @@
 import 'package:family_budget/core/api/api_client.dart';
 import 'package:family_budget/core/cache/app_cache.dart';
 import 'package:family_budget/core/utils/talker_pod.dart';
+import 'package:family_budget/features/category/models/app_icon.dart';
 import 'package:family_budget/features/category/models/category.dart';
 import 'package:family_budget/features/category/providers/category_pod.dart';
 import 'package:family_budget/features/category/repository/category_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:talker/talker.dart';
 
@@ -53,7 +53,7 @@ void main() {
 
       final mockJsonResponse = {
         'success': true,
-        'data': {'id': categoryId, 'name': updatedName, 'icon': 'truck', 'color': updatedColor, 'parent_id': null, 'children': []},
+        'data': {'id': categoryId, 'name': updatedName, 'icon': 'heroicon-o-truck', 'color': updatedColor, 'parent_id': null, 'children': []},
       };
 
       when(
@@ -63,7 +63,7 @@ void main() {
         ),
       ).thenAnswer((_) async => mockJsonResponse);
 
-      final result = await repository.update(id: categoryId, name: updatedName, icon: HeroIcons.truck, color: updatedColor);
+      final result = await repository.update(id: categoryId, name: updatedName, icon: AppIcon.truck, color: updatedColor);
 
       expect(result.id, categoryId);
       expect(result.name, updatedName);
@@ -74,7 +74,7 @@ void main() {
         path: 'categories/$categoryId',
         data: {
           'name': updatedName,
-          'icon': 'truck',
+          'icon': 'heroicon-o-truck',
           'color': updatedColor,
           'parent_id': null,
         },
@@ -88,7 +88,7 @@ void main() {
 
       final mockJsonResponse = {
         'success': true,
-        'data': {'id': categoryId, 'name': updatedName, 'icon': 'fire', 'color': null, 'parent_id': 1, 'children': []},
+        'data': {'id': categoryId, 'name': updatedName, 'icon': 'heroicon-o-home', 'color': null, 'parent_id': 1, 'children': []},
       };
 
       when(
@@ -98,7 +98,7 @@ void main() {
         ),
       ).thenAnswer((_) async => mockJsonResponse);
 
-      final result = await repository.update(id: categoryId, name: updatedName, icon: HeroIcons.fire, color: null);
+      final result = await repository.update(id: categoryId, name: updatedName, icon: AppIcon.home, color: null);
 
       expect(result.id, categoryId);
       expect(result.name, updatedName);
@@ -114,7 +114,7 @@ void main() {
               as Map<String, dynamic>;
 
       expect(captured['name'], updatedName);
-      expect(captured['icon'], 'fire');
+      expect(captured['icon'], 'heroicon-o-home');
       expect(captured.containsKey('color'), isFalse);
     });
 
@@ -153,9 +153,9 @@ void main() {
   group('CategoryNotifier.updateCategory()', () {
     late MockCategoryRepository mockRepository;
 
-    final tRootCategory = Category(id: 1, name: 'Транспорт', icon: HeroIcons.truck, color: '#000', parentId: null, children: []);
+    final tRootCategory = Category(id: 1, name: 'Транспорт', icon: AppIcon.truck, color: '#000', parentId: null, children: []);
 
-    final tSubCategory = Category(id: 2, name: 'Паливо', icon: HeroIcons.fire, color: null, parentId: 1, children: []);
+    final tSubCategory = Category(id: 2, name: 'Паливо', icon: AppIcon.home, color: null, parentId: 1, children: []);
 
     setUp(() {
       mockRepository = MockCategoryRepository();
@@ -184,13 +184,13 @@ void main() {
       when(() => mockRepository.update(
             id: 1,
             name: updatedName,
-            icon: HeroIcons.truck,
+            icon: AppIcon.truck,
             color: updatedColor,
             parentId: any(named: 'parentId'),
           )).thenAnswer((_) async => apiResponse);
 
       await container.read(categoryProvider.future);
-      await container.read(categoryProvider.notifier).updateCategory(id: 1, name: updatedName, icon: HeroIcons.truck, color: updatedColor);
+      await container.read(categoryProvider.notifier).updateCategory(id: 1, name: updatedName, icon: AppIcon.truck, color: updatedColor);
 
       final state = container.read(categoryProvider).value!;
 
@@ -203,7 +203,7 @@ void main() {
       verify(() => mockRepository.update(
             id: 1,
             name: updatedName,
-            icon: HeroIcons.truck,
+            icon: AppIcon.truck,
             color: updatedColor,
             parentId: any(named: 'parentId'),
           )).called(1);
@@ -261,7 +261,7 @@ void main() {
       await container.read(categoryProvider.future);
       final previousState = container.read(categoryProvider).value!;
 
-      expect(() => container.read(categoryProvider.notifier).updateCategory(id: 1, name: 'Помилка', icon: HeroIcons.truck, color: '#000'), throwsException);
+      expect(() => container.read(categoryProvider.notifier).updateCategory(id: 1, name: 'Помилка', icon: AppIcon.truck, color: '#000'), throwsException);
 
       expect(container.read(categoryProvider).value, previousState);
     });

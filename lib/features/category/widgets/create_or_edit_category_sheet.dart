@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 
+import '../models/app_icon.dart';
+
 class CreateOrEditCategorySheet extends ConsumerStatefulWidget {
   final Category? category;
 
@@ -22,7 +24,7 @@ class _CreateOrEditCategorySheetState extends ConsumerState<CreateOrEditCategory
   bool _isSubcategory = false;
   int? _selectedParentId;
   String? _selectedColor = '#2196F3';
-  HeroIcons? _selectedIcon;
+  AppIcon? _selectedIcon;
   bool _isLoading = false;
 
   final List<String> _colors = ['#FF5733', '#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#E91E63', '#607D8B'];
@@ -87,7 +89,7 @@ class _CreateOrEditCategorySheetState extends ConsumerState<CreateOrEditCategory
   }
 
   Future<void> _pickIcon() async {
-    final HeroIcons? pickedIcon = await showDialog<HeroIcons>(
+    final AppIcon? pickedIcon = await showDialog<AppIcon>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -97,18 +99,22 @@ class _CreateOrEditCategorySheetState extends ConsumerState<CreateOrEditCategory
             height: 400,
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 5, crossAxisSpacing: 8, mainAxisSpacing: 8),
-              itemCount: HeroIcons.values.length,
+              itemCount: AppIcon.values.length,
+
               itemBuilder: (context, index) {
-                final icon = HeroIcons.values[index];
+                final appIcon = AppIcon.values[index];
+
+                if (appIcon == AppIcon.question) return const SizedBox.shrink();
+
                 return InkWell(
-                  onTap: () => Navigator.of(context).pop(icon),
+                  onTap: () => Navigator.of(context).pop(appIcon),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade300),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: HeroIcon(icon, size: 24, color: Colors.blueGrey),
+                    child: HeroIcon(appIcon.heroData, size: 24, color: Colors.blueGrey),
                   ),
                 );
               },
@@ -160,7 +166,7 @@ class _CreateOrEditCategorySheetState extends ConsumerState<CreateOrEditCategory
                       height: 56,
                       decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
                       child: _selectedIcon != null
-                          ? HeroIcon(_selectedIcon!, size: 32, color: Colors.blueGrey)
+                          ? HeroIcon(_selectedIcon!.heroData, size: 32, color: Colors.blueGrey)
                           : const Icon(Icons.category, size: 32, color: Colors.grey),
                     ),
                     const SizedBox(width: 16),

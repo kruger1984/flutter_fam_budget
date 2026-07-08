@@ -6,6 +6,8 @@ import 'package:family_budget/features/family/providers/family_pod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/extensions.dart';
+
 class ManageAccountsScreen extends ConsumerWidget {
   const ManageAccountsScreen({super.key});
 
@@ -97,7 +99,7 @@ class ManageAccountsScreen extends ConsumerWidget {
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   child: ListTile(
                     title: Text(account.name),
-                    subtitle: Text('${account.balance} ${account.currency.name}'),
+                    subtitle: Text(account.balance.toMoney(account.currency)),
                     leading: Icon(account.isPersonal ? Icons.person : Icons.family_restroom, color: isOwner ? Colors.blue : Colors.grey),
                     trailing: isOwner
                         ? IconButton(

@@ -1,6 +1,6 @@
+import 'package:family_budget/features/category/models/app_icon.dart';
 import 'package:family_budget/features/category/models/category.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:heroicons/heroicons.dart';
 
 void main() {
   group('Category Model', () {
@@ -9,7 +9,7 @@ void main() {
       final tCategoryRawJson = {
         'id': 1,
         'name': 'Транспорт',
-        'icon': 'truck',
+        'icon': 'heroicon-o-shopping-cart',
         'color': '#FF5733',
         'parent_id': null,
         'children': [
@@ -69,7 +69,7 @@ void main() {
       final category = Category.fromJson(tCategoryRawJson);
 
       expect(category.icon, isNotNull);
-      expect(category.icon, HeroIcons.questionMarkCircle);
+      expect(category.icon, AppIcon.question);
     });
   });
 }

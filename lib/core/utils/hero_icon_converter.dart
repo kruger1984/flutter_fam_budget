@@ -6,9 +6,13 @@ class HeroIconConverter implements JsonConverter<HeroIcons, String> {
 
   @override
   HeroIcons fromJson(String json) {
-    final camelCaseName = json.split('-').map((word) {
+    final cleanName = json
+        .replaceFirst('heroicon-o-', '')
+        .replaceFirst('heroicon-s-', '');
+
+    final camelCaseName = cleanName.split('-').map((word) {
       if (word.isEmpty) return '';
-      return word == json.split('-').first
+      return word == cleanName.split('-').first
           ? word
           : word[0].toUpperCase() + word.substring(1);
     }).join('');
@@ -21,9 +25,11 @@ class HeroIconConverter implements JsonConverter<HeroIcons, String> {
 
   @override
   String toJson(HeroIcons object) {
-    return object.name.replaceAllMapped(
+    final kebabCase = object.name.replaceAllMapped(
       RegExp(r'[A-Z]'),
           (match) => '-${match.group(0)!.toLowerCase()}',
     );
+
+    return 'heroicon-o-$kebabCase';
   }
 }
